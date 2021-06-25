@@ -13,4 +13,12 @@ module.exports = {
     experiments: {
         asyncWebAssembly: true,
     },
+    module: {
+        rules: [
+            {
+                test: /\.(vert|frag)/,
+                type: 'asset/source',
+            }
+        ],
+    },
 };
