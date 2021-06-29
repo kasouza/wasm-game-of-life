@@ -1,34 +1,33 @@
 extern crate wasm_bindgen;
+extern crate js_sys;
 
 use wasm_bindgen::prelude::*;
+use js_sys::Math;
 
-const SIZE: usize = 40; // SIZE == widht == height
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: bool);
+}
 
 #[wasm_bindgen]
 pub struct Universe {
-    size: usize,
-    previous_cells: [bool; SIZE * SIZE],
-    cells: [bool; SIZE * SIZE],
+    size: u32,
+    cells: Vec<u8>,
 }
 
 impl Universe {
-    fn set_size(&mut self, size: usize) {
+    fn set_size(&mut self, size: u32) {
         self.size = size;
     }
-
-    fn toggle_cell(&mut self, x: usize, y: usize) {
-        let idx = self.get_index(x, y);
-
-        self.cells[idx] = !self.cells[idx];
-    }
 }
 
 impl Universe {
-    fn get_index(&self, x: usize, y: usize) -> usize {
-        x + (y * self.size)
+    fn get_index(&self, x: u32, y: u32) -> usize {
+        (x + (y * self.size)) as usize
     }
 
-    fn get_live_neighbors_count(&self, x: usize, y: usize) -> u8 {
+    fn get_live_neighbors_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
 
         let north = if y == 0 { self.size - 1 } else { y - 1 };
@@ -40,28 +39,28 @@ impl Universe {
         let west = if x == 0 { self.size - 1 } else { x - 1 };
 
         let nw = self.get_index(west, north);
-        count += self.previous_cells[nw] as u8;
+        count += self.cells[nw];
 
         let n = self.get_index(x, north);
-        count += self.previous_cells[n] as u8;
+        count += self.cells[n];
 
         let ne = self.get_index(east, north);
-        count += self.previous_cells[ne] as u8;
+        count += self.cells[ne];
 
         let w = self.get_index(west, y);
-        count += self.previous_cells[w] as u8;
+        count += self.cells[w];
 
         let e = self.get_index(east, y);
-        count += self.previous_cells[e] as u8;
+        count += self.cells[e];
 
         let sw = self.get_index(west, south);
-        count += self.previous_cells[sw] as u8;
+        count += self.cells[sw];
 
         let s = self.get_index(x, south);
-        count += self.previous_cells[s] as u8;
+        count += self.cells[s];
 
         let se = self.get_index(east, south);
-        count += self.previous_cells[se] as u8;
+        count += self.cells[se];
 
         count
     }
@@ -69,34 +68,50 @@ impl Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    pub fn new() -> Universe {
+    pub fn new(size: u32) -> Universe {
+        let cells: Vec<u8> = (0..size * size)
+            .map(|x| (x % 3 == 0 || x % 7 == 0) as u8)
+            .collect();
+
         Universe {
-            size: SIZE,
-            previous_cells: [false; SIZE * SIZE],
-            cells: [false; SIZE * SIZE],
+            size,
+            cells
         }
     }
 
+    pub fn toggle_cell(&mut self, x: u32, y: u32) {
+        let idx = self.get_index(x, y);
+
+        self.cells[idx] = !self.cells[idx];
+    }
+
     pub fn tick(&mut self) {
+        let mut next = self.cells.clone();
+
         for x in 0..self.size {
             for y in 0..self.size {
                 let idx = self.get_index(x, y);
 
-                self.previous_cells[idx] = self.cells[idx];
-                let cell = self.previous_cells[idx];
+                let cell = self.cells[idx];
                 let count = self.get_live_neighbors_count(x, y);
 
-                self.cells[idx] = match (cell, count) {
-                    (true, 2) | (true, 3) => true,
-                    (false, 3) => true,
-                    _ => false,
+                next[idx] = match (cell, count) {
+                    (1, 2) | (1, 3) => 1,
+                    (0, 3) => 1,
+                    _ => 0,
                 };
             }
         }
+
+        self.cells = next;
     }
 
-    pub fn get_cells(&self) -> *const bool {
+    pub fn cells(&self) -> *const u8 {
         self.cells.as_ptr()
+    }
+
+    pub fn size(&self) -> u32 {
+        self.size
     }
 }
 
