@@ -6,6 +6,51 @@ import * as Utils from './webgl-utils.js';
 import vertexShaderSource from './vertex-shader.vert';
 import fragmentShaderSource from './fragment-shader.frag';
 
+let shouldAnimate = true;
+
+const fps = new class {
+  constructor() {
+    this.fps = document.getElementById("fps");
+    this.frames = [];
+    this.lastFrameTimeStamp = performance.now();
+  }
+
+  render() {
+    // Convert the delta time since the last frame render into a measure
+    // of frames per second.
+    const now = performance.now();
+    const delta = now - this.lastFrameTimeStamp;
+    this.lastFrameTimeStamp = now;
+    const fps = 1 / delta * 1000;
+
+    // Save only the latest 100 timings.
+    this.frames.push(fps);
+    if (this.frames.length > 100) {
+      this.frames.shift();
+    }
+
+    // Find the max, min, and mean of our 100 latest timings.
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    for (let i = 0; i < this.frames.length; i++) {
+      sum += this.frames[i];
+      min = Math.min(this.frames[i], min);
+      max = Math.max(this.frames[i], max);
+    }
+    let mean = sum / this.frames.length;
+
+    // Render the statistics.
+    this.fps.textContent = `
+Frames per Second:
+         latest = ${Math.round(fps)}
+avg of last 100 = ${Math.round(mean)}
+min of last 100 = ${Math.round(min)}
+max of last 100 = ${Math.round(max)}
+`.trim();
+  }
+};
+
 function createWorld() {
     return Object.create({
         objects: {},
@@ -30,27 +75,26 @@ function createWorld() {
     });
 }
 
-function cellVertices(cellSize, row, col) {
-    const x = col * (cellSize + 1) + 1;
-    const y = row * (cellSize + 1) + 1;
-    
-    const x2 = x + cellSize;
-    const y2 = y + cellSize;
+function toggleCell(e, universe, cellSize) {
+	const canvas = e.target;
+	const rect = canvas.getBoundingClientRect();
+	const size = universe.size();
 
-    return [
-        x, y,
-        x2, y,
-        x, y2,
+	const scaleX = canvas.width / rect.width;
+	const scaleY = canvas.height / rect.height;
 
-        x, y2,
-        x2, y,
-        x2, y2,
-    ];
+	const x = (e.clientX - rect.left) * scaleX;
+	const y = (e.clientY - rect.top) * scaleY;
+
+	const row = Math.min(Math.floor(y / (cellSize + 1)), size - 1);
+	const col = Math.min(Math.floor(x / (cellSize + 1)), size - 1);
+
+	universe.toggle_cell(row, col);
 }
 
 function main() {
     const canvas = document.querySelector('#webgl-canvas');
-	const universe = Universe.new(60);
+	const universe = Universe.new(220);
 
     const size = universe.size();	// In rows/cols number
 	const cellSize = 5;				// In pixels
@@ -60,7 +104,7 @@ function main() {
 
 	canvas.width = canvasSize;
 	canvas.height = canvasSize;
-
+	
     const gl = canvas.getContext('webgl');
 
     const vertexShader = Utils.createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
@@ -112,9 +156,28 @@ function main() {
     // Create cells objects
     const deadCellsVertices = [];
 
+	let x;
+	let y;
+	let x2;
+	let y2;
+
     for (let col = 0; col < size; col++) {
         for (let row = 0; row < size; row++) {
-            deadCellsVertices.push(...cellVertices(cellSize, row, col));
+			x = col * (cellSize + 1) + 1;
+			y = row * (cellSize + 1) + 1;
+			
+			x2 = x + cellSize;
+			y2 = y + cellSize;
+
+            deadCellsVertices.push(
+				x, y,
+				x2, y,
+				x, y2,
+
+				x, y2,
+				x2, y,
+				x2, y2,
+			);
         }
     }
 
@@ -124,40 +187,29 @@ function main() {
     world.addObject('aliveCells',
         gl.TRIANGLES, [1, 1, 1, 1], []);
 
+	document.querySelector('#btn').addEventListener('click', () => {
+		shouldAnimate = !shouldAnimate;
+		if (shouldAnimate) {
+			requestAnimationFrame(() => {
+				tick(gl, program, programInfo, world, universe, cellSize);
+			});
+		}
+	});
+
+	canvas.addEventListener('click', (e) => {
+		toggleCell(e, universe, cellSize);
+
+		update(gl, program, programInfo, world, universe, cellSize);
+		render(gl, program, programInfo, world, universe, cellSize);
+	});
+
+
     requestAnimationFrame(() => {
         tick(gl, program, programInfo, world, universe, cellSize);
     });
 }
 
-function tick(gl, program, programInfo, world, universe, cellSize) {
-	// ----- updating stuff ------
-	universe.tick();
-	const size = universe.size();
-	const ptr = universe.cells();
-	const cells = new Uint8Array(memory.buffer, ptr, size * size);
-
-	const newAliveCells = [];
-	const newDeadCells = [];
-
-	for (let row = 0; row < size; row++) {
-		for (let col = 0; col < size; col++) {
-			const idx = col + (row * size); 
-
-			const vertices = cellVertices(cellSize, row, col);
-
-			// I know this is ugly as hell
-			if (cells[idx]) {
-				newAliveCells.push(...vertices);
-			} else {
-				newDeadCells.push(...vertices);
-			}
-		}
-	}
-
-	world.updateObject('aliveCells', { vertices: newAliveCells });
-	world.updateObject('deadCells', { vertices: newDeadCells });
-	
-	// ----- rendering stuff -----
+function render(gl, program, programInfo, world, universe, cellSize) {
     gl.useProgram(program);
 
     gl.clearColor(0, 0, 0, 0);
@@ -165,7 +217,6 @@ function tick(gl, program, programInfo, world, universe, cellSize) {
 
     if(Utils.resizeCanvasToDisplaySize(gl.canvas)) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-		console.log('a');
     }
 
 
@@ -187,11 +238,78 @@ function tick(gl, program, programInfo, world, universe, cellSize) {
 
         gl.drawArrays(object.type, 0, object.vertices.length / 2);
     }
+}
 
+function update(gl, program, programInfo, world, universe, cellSize) {
+	const size = universe.size();
+	const ptr = universe.cells();
+	const cells = new Uint8Array(memory.buffer, ptr, size * size);
 
-    requestAnimationFrame(() => {
-        tick(gl, program, programInfo, world, universe, cellSize);
-    });
+	const newAliveCells = [];
+	const newDeadCells = [];
+
+	let x;
+	let y;
+	let x2;
+	let y2;
+
+	for (let row = 0; row < size; row++) {
+		for (let col = 0; col < size; col++) {
+			const idx = col + (row * size); 
+
+			x = col * (cellSize + 1) + 1;
+			y = row * (cellSize + 1) + 1;
+			
+			x2 = x + cellSize;
+			y2 = y + cellSize;
+
+			// I know this is ugly as hell
+			if (cells[idx]) {
+				newAliveCells.push(
+					x, y,
+					x2, y,
+					x, y2,
+
+					x, y2,
+					x2, y,
+					x2, y2,
+				);
+			} else {
+				newDeadCells.push(
+					x, y,
+					x2, y,
+					x, y2,
+
+					x, y2,
+					x2, y,
+					x2, y2,
+				);
+			}
+		}
+	}
+
+	world.updateObject('aliveCells', { vertices: newAliveCells });
+	world.updateObject('deadCells', { vertices: newDeadCells });
+}
+
+function tick(gl, program, programInfo, world, universe, cellSize) {
+	fps.render();
+
+	// Update the univese to the next gen
+	universe.tick();
+
+	// Update stuff for rendering, doesn't change nothing in the universe,
+	// only rendering things
+	update(gl, program, programInfo, world, universe, cellSize);
+	
+	// Just renders, doesn't update nothing
+	render(gl, program, programInfo, world, universe, cellSize);
+
+	if (shouldAnimate) {
+		requestAnimationFrame(() => {
+			tick(gl, program, programInfo, world, universe, cellSize);
+		});
+	}
 }
 
 main();

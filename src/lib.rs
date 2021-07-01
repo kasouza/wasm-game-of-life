@@ -79,10 +79,10 @@ impl Universe {
         }
     }
 
-    pub fn toggle_cell(&mut self, x: u32, y: u32) {
-        let idx = self.get_index(x, y);
+    pub fn toggle_cell(&mut self, row: u32, col: u32) {
+            let idx = self.get_index(col, row);
 
-        self.cells[idx] = !self.cells[idx];
+        self.cells[idx] = if self.cells[idx] == 1 { 0 } else { 1 };
     }
 
     pub fn tick(&mut self) {
