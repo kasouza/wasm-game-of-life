@@ -2,7 +2,6 @@ extern crate wasm_bindgen;
 extern crate js_sys;
 
 use wasm_bindgen::prelude::*;
-use js_sys::Math;
 
 #[wasm_bindgen]
 extern "C" {
@@ -14,6 +13,7 @@ extern "C" {
 pub struct Universe {
     size: u32,
     cells: Vec<u8>,
+    changed_cells: Vec<u32>,
 }
 
 impl Universe {
@@ -73,20 +73,38 @@ impl Universe {
             .map(|x| (x % 3 == 0 || x % 7 == 0) as u8)
             .collect();
 
+        let mut changed_cells: Vec<u32> = Vec::new();
+
+        for row in 0..size {
+            for col in 0..size {
+                let idx = col + (row * size);
+                changed_cells.push(row);
+                changed_cells.push(col);
+            }
+        }
+
         Universe {
             size,
-            cells
+            cells,
+            changed_cells,
         }
     }
 
     pub fn toggle_cell(&mut self, row: u32, col: u32) {
-            let idx = self.get_index(col, row);
-
+        let idx = self.get_index(col, row);
         self.cells[idx] = if self.cells[idx] == 1 { 0 } else { 1 };
+
+        if (self.cells[idx] == 1) {
+            self.changed_cells = Vec::new();
+
+            self.changed_cells.push(row);
+            self.changed_cells.push(col);
+        }
     }
 
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
+        self.changed_cells = Vec::new();
 
         for x in 0..self.size {
             for y in 0..self.size {
@@ -95,19 +113,26 @@ impl Universe {
                 let cell = self.cells[idx];
                 let count = self.get_live_neighbors_count(x, y);
 
-                next[idx] = match (cell, count) {
+                let next_cell = match (cell, count) {
                     (1, 2) | (1, 3) => 1,
                     (0, 3) => 1,
                     _ => 0,
                 };
+
+                if next_cell == 1 {
+                    self.changed_cells.push(y);
+                    self.changed_cells.push(x);
+                }
+
+                next[idx] = next_cell;
             }
         }
 
         self.cells = next;
     }
 
-    pub fn cells(&self) -> *const u8 {
-        self.cells.as_ptr()
+    pub fn cells(&self) -> Vec<u32> {
+        self.changed_cells.clone()
     }
 
     pub fn size(&self) -> u32 {
