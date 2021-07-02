@@ -17,12 +17,6 @@ pub struct Universe {
 }
 
 impl Universe {
-    fn set_size(&mut self, size: u32) {
-        self.size = size;
-    }
-}
-
-impl Universe {
     fn get_index(&self, x: u32, y: u32) -> usize {
         (x + (y * self.size)) as usize
     }
@@ -77,7 +71,6 @@ impl Universe {
 
         for row in 0..size {
             for col in 0..size {
-                let idx = col + (row * size);
                 changed_cells.push(row);
                 changed_cells.push(col);
             }
@@ -94,7 +87,7 @@ impl Universe {
         let idx = self.get_index(col, row);
         self.cells[idx] = if self.cells[idx] == 1 { 0 } else { 1 };
 
-        if (self.cells[idx] == 1) {
+        if self.cells[idx] == 1 {
             self.changed_cells = Vec::new();
 
             self.changed_cells.push(row);
@@ -146,9 +139,8 @@ mod tests {
 
     #[test]
     pub fn test_zero_live_neigbors_count() {
-        let mut universe = Universe::new();
+        let mut universe = Universe::new(3);
 
-        universe.set_size(3); // 3 x 3 universe
         universe.toggle_cell(1, 1); // Middle cell to true
 
         // Only the center cell is alive, so the live neighbors count
@@ -158,9 +150,7 @@ mod tests {
 
     #[test]
     pub fn test_eight_live_neigbors_count() {
-        let mut universe = Universe::new();
-
-        universe.set_size(3); // 3 x 3 universe
+        let mut universe = Universe::new(3);
 
         // Set all cells to true
         for x in 0..3 {

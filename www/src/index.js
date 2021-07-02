@@ -6,7 +6,7 @@ import * as Utils from './webgl-utils.js';
 import vertexShaderSource from './vertex-shader.vert';
 import fragmentShaderSource from './fragment-shader.frag';
 
-let shouldAnimate = true;
+let isPaused = false;
 
 const fps = new class {
   constructor() {
@@ -82,7 +82,7 @@ function createWorld() {
     });
 }
 
-function toggleCell(e, universe, cellSize) {
+function toggleCell(e, universe, world, cellSize) {
 	const canvas = e.target;
 	const rect = canvas.getBoundingClientRect();
 	const size = universe.size();
@@ -93,15 +93,23 @@ function toggleCell(e, universe, cellSize) {
 	const x = (e.clientX - rect.left) * scaleX;
 	const y = (e.clientY - rect.top) * scaleY;
 
-	const row = Math.min(Math.floor(y / (cellSize + 1)), size - 1);
-	const col = Math.min(Math.floor(x / (cellSize + 1)), size - 1);
+	// I don't know why but row and cow are reversed for some reason
+	const col = Math.min(Math.floor(y / (cellSize + 1)), size - 1);
+	const row = Math.min(Math.floor(x / (cellSize + 1)), size - 1);
+	
+	if (isPaused) {
+		const idx = col + (row * size);
+		const cell = world.objects[`cell${idx}`];
 
-	universe.toggle_cell(col, row);
+		cell.shouldRender = !cell.shouldRender;
+	}
+
+	universe.toggle_cell(row, col);
 }
 
 function main() {
     const canvas = document.querySelector('#webgl-canvas');
-	const universe = Universe.new(240);
+	const universe = Universe.new(200);
 
     const size = universe.size();	// In rows/cols number
 	const cellSize = 5;				// In pixels
@@ -197,9 +205,11 @@ function main() {
         }
     }
 
-	document.querySelector('#btn').addEventListener('click', () => {
-		shouldAnimate = !shouldAnimate;
-		if (shouldAnimate) {
+	document.querySelector('#btn').addEventListener('click', (e) => {
+		isPaused = !isPaused;
+		e.target.innerHTML = isPaused ? 'Play' : 'Stop';
+
+		if (!isPaused) {
 			requestAnimationFrame(() => {
 				tick(gl, program, programInfo, world, universe, cellSize);
 			});
@@ -207,9 +217,12 @@ function main() {
 	});
 
 	canvas.addEventListener('click', (e) => {
-		toggleCell(e, universe, cellSize);
+		toggleCell(e, universe, world, cellSize);
 
-		update(gl, program, programInfo, world, universe, cellSize);
+		if (!isPaused) {
+			update(gl, program, programInfo, world, universe, cellSize);
+		}
+
 		render(gl, program, programInfo, world, universe, cellSize);
 	});
 
@@ -241,7 +254,7 @@ function render(gl, program, programInfo, world, universe, cellSize) {
 
         gl.drawArrays(object.type, 0, object.vertices.length / 2);
 
-		object.shouldRender = false;
+		object.shouldRender = isPaused;
     }
 
 
@@ -264,7 +277,7 @@ function update(gl, program, programInfo, world, universe, cellSize) {
 }
 
 function tick(gl, program, programInfo, world, universe, cellSize) {
-	// fps.render();
+	fps.render();
 
 	// Update the univese to the next gen
 	universe.tick();
@@ -277,7 +290,7 @@ function tick(gl, program, programInfo, world, universe, cellSize) {
 	render(gl, program, programInfo, world, universe, cellSize);
 
 
-	if (shouldAnimate) {
+	if (!isPaused) {
 		requestAnimationFrame(() => {
 			tick(gl, program, programInfo, world, universe, cellSize);
 		});
