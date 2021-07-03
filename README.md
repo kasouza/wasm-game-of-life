@@ -6,6 +6,23 @@ For the heavier calculations (ticking the Universe of the game), I used the Rust
 
 If you want to create this project yourself, you can follow [this](https://rustwasm.github.io/docs/book/) tutorial, although my code may be a little different as I remade it from scratch to train a bit. If you are interested in Rust and WebAssembly, I really recommend you to follow the tutorial and try to build you own version, it can be a very fun experience!
 
+# Documentation
+The code is all documented, you view it directly in the source code, but if you really want to generate documentation (although I really think its unnecessary), you can by using [`jsdoc`](https://jsdoc.app/) for the Javascript part or [`cargo doc`](https://doc.rust-lang.org/cargo/commands/cargo-doc.html) for the Rust code.
+
+Withing the project folder, run:
+
+Javascript
+```
+jsdoc www/src
+```
+
+Rust
+```
+cargo doc --no-deps
+```
+
+The output will be in `/out` for the Javascript, and in `target/doc` for Rust.
+
 # Building from source
 **This tutorial targets linux/WSL (Windows Subsystem for Linux) users, i don't actually know how to do it in Windows or MacOS, but it shouldn't be much different.**
 
