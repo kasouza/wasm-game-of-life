@@ -40,6 +40,8 @@ npm start
 
 Now if you go to your browser and access `localhost:8080`, you should see something like this:
 
-![screen-gif](./example.gif)
+<p align="center">
+  <img src="./example.gif">
+</p>
 
 I hope you liked it!
