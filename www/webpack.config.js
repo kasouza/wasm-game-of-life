@@ -1,13 +1,14 @@
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
 module.exports = {
     entry: './bootstrap.js',
-    mode: "development",
+    mode: 'development',
     devServer: {
         contentBase: './dist',
     },
     output: {
-        filename: 'main.js',
+        filename: 'index_bundle.js',
         path: path.resolve(__dirname, 'dist'),
     },
     experiments: {
@@ -18,7 +19,12 @@ module.exports = {
             {
                 test: /\.(vert|frag)/,
                 type: 'asset/source',
-            }
+            },
+			{
+				test: /\.css$/i,
+				use: ['style-loader', 'css-loader'],
+			},
         ],
     },
+	plugins: [new HtmlWebpackPlugin()]
 };

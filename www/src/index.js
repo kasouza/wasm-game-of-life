@@ -1,55 +1,14 @@
+import './css/index.css';
+
 import { Universe } from 'wasm-game-of-life';
 import { memory } from 'wasm-game-of-life/wasm_game_of_life_bg.wasm';
 
-import * as Utils from './webgl-utils.js';
+import * as Utils from './js/webgl-utils.js';
 
-import vertexShaderSource from './vertex-shader.vert';
-import fragmentShaderSource from './fragment-shader.frag';
+import vertexShaderSource from './shaders/vertex-shader.vert';
+	import fragmentShaderSource from './shaders/fragment-shader.frag';
 
 let isPaused = false;
-
-const fps = new class {
-  constructor() {
-    this.fps = document.getElementById("fps");
-    this.frames = [];
-    this.lastFrameTimeStamp = performance.now();
-  }
-
-  render() {
-    // Convert the delta time since the last frame render into a measure
-    // of frames per second.
-    const now = performance.now();
-    const delta = now - this.lastFrameTimeStamp;
-    this.lastFrameTimeStamp = now;
-    const fps = 1 / delta * 1000;
-
-    // Save only the latest 100 timings.
-    this.frames.push(fps);
-    if (this.frames.length > 100) {
-      this.frames.shift();
-    }
-
-    // Find the max, min, and mean of our 100 latest timings.
-    let min = Infinity;
-    let max = -Infinity;
-    let sum = 0;
-    for (let i = 0; i < this.frames.length; i++) {
-      sum += this.frames[i];
-      min = Math.min(this.frames[i], min);
-      max = Math.max(this.frames[i], max);
-    }
-    let mean = sum / this.frames.length;
-
-    // Render the statistics.
-    this.fps.textContent = `
-Frames per Second:
-         latest = ${Math.round(fps)}
-avg of last 100 = ${Math.round(mean)}
-min of last 100 = ${Math.round(min)}
-max of last 100 = ${Math.round(max)}
-`.trim();
-  }
-};
 
 function createWorld() {
     return Object.create({
@@ -108,8 +67,9 @@ function toggleCell(e, universe, world, cellSize) {
 }
 
 function main() {
-    const canvas = document.querySelector('#webgl-canvas');
-	const universe = Universe.new(200);
+	const body = document.body;
+    const canvas = document.createElement('canvas');
+	const universe = Universe.new(60);
 
     const size = universe.size();	// In rows/cols number
 	const cellSize = 5;				// In pixels
@@ -146,7 +106,7 @@ function main() {
     gl.enableVertexAttribArray(
         programInfo.attributeLocations.position);
 
-    gl.vertexAttribPointer(programInfo.buffers.position,
+    gl.vertexAttribPointer(programInfo.buffers.positon,
         2, gl.FLOAT, false, 0, 0);
 
 	gl.useProgram(program);
@@ -205,9 +165,11 @@ function main() {
         }
     }
 
-	document.querySelector('#btn').addEventListener('click', (e) => {
+	const pauseButton = document.createElement('button');
+	pauseButton.innerText = 'Stop';
+	pauseButton.addEventListener('click', (e) => {
 		isPaused = !isPaused;
-		e.target.innerHTML = isPaused ? 'Play' : 'Stop';
+		e.target.innerText = isPaused ? 'Play' : 'Stop';
 
 		if (!isPaused) {
 			requestAnimationFrame(() => {
@@ -226,6 +188,8 @@ function main() {
 		render(gl, program, programInfo, world, universe, cellSize);
 	});
 
+	body.appendChild(pauseButton);
+	body.appendChild(canvas);
 
     requestAnimationFrame(() => {
         tick(gl, program, programInfo, world, universe, cellSize);
@@ -277,16 +241,9 @@ function update(gl, program, programInfo, world, universe, cellSize) {
 }
 
 function tick(gl, program, programInfo, world, universe, cellSize) {
-	fps.render();
-
-	// Update the univese to the next gen
 	universe.tick();
 
-	// Update stuff for rendering, doesn't change nothing in the universe,
-	// only rendering things
 	update(gl, program, programInfo, world, universe, cellSize);
-	
-	// Just renders, doesn't update nothing
 	render(gl, program, programInfo, world, universe, cellSize);
 
 
