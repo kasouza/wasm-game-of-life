@@ -1,5 +1,5 @@
-extern crate wasm_bindgen;
 extern crate js_sys;
+extern crate wasm_bindgen;
 
 use wasm_bindgen::prelude::*;
 
@@ -10,6 +10,7 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+/// Represents the universe of the game, which contains the cells and handles the `tick`.
 pub struct Universe {
     size: u32,
     cells: Vec<u8>,
@@ -17,10 +18,33 @@ pub struct Universe {
 }
 
 impl Universe {
+    /// Returns the index of a cell given the `x` and `y` coordinates, based on the `Universe`
+    /// size.
+    ///
+    /// # Arguments
+    /// * `x` - u32 representing the X position of a cell.
+    /// * `y` - u32 representing the y position of a cell.
+    ///
+    /// # Examples
+    /// ```
+    /// let universe = Universe::new(4);
+    /// let idx = universe.get_index(1, 1); // 5
+    /// ```
     fn get_index(&self, x: u32, y: u32) -> usize {
         (x + (y * self.size)) as usize
     }
 
+    /// Returns the live neighbors count of a cell given its coordinates.
+    ///
+    /// # Arguments
+    /// * `x` - u32 representing the X position of a cell
+    /// * `y` - u32 representing the y position of a cell
+    ///
+    /// # Examples
+    /// ```
+    /// let universe = Universe::new(4);
+    /// let live_neighbors = universe.get_live_neighbors_count(1, 1);
+    /// ```
     fn get_live_neighbors_count(&self, x: u32, y: u32) -> u8 {
         let mut count = 0;
 
@@ -62,6 +86,11 @@ impl Universe {
 
 #[wasm_bindgen]
 impl Universe {
+    /// Returns a new `Universe` of a given size.
+    ///
+    /// # Arguments
+    /// * `size` - u32 that represents both the width and height of the
+    /// `Universe`(`size`==width==height).
     pub fn new(size: u32) -> Universe {
         let cells: Vec<u8> = (0..size * size)
             .map(|x| (x % 3 == 0 || x % 7 == 0) as u8)
@@ -83,6 +112,17 @@ impl Universe {
         }
     }
 
+    /// Toggle a cell given its coordinates.
+    ///
+    /// # Arguments
+    /// * `row` - row or Y position of a cell.
+    /// * `col` - col or X position of a cell.
+    ///
+    /// # Examples
+    /// ```
+    /// let universe = Universe::new(3);
+    /// unierse.toggle_cell(1, 1);
+    /// ```
     pub fn toggle_cell(&mut self, row: u32, col: u32) {
         let idx = self.get_index(col, row);
         self.cells[idx] = if self.cells[idx] == 1 { 0 } else { 1 };
@@ -95,6 +135,7 @@ impl Universe {
         }
     }
 
+    /// Advances the `Universe` to the next generation.
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
         self.changed_cells = Vec::new();
@@ -124,10 +165,12 @@ impl Universe {
         self.cells = next;
     }
 
+    /// Returns a `Vec<u32>` of the cells that changed from the last generation to the current.
     pub fn cells(&self) -> Vec<u32> {
         self.changed_cells.clone()
     }
 
+    /// Returns the size of the `Universe`.
     pub fn size(&self) -> u32 {
         self.size
     }
