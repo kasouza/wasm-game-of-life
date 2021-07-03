@@ -2,9 +2,9 @@
 
 This project is a very simple implementation of Conway's Game of Life that I made with Javascript and WebAssembly, using Rust + wasm-bindgen.
 
-If you want to build this project yourself, you can follow [this](https://rustwasm.github.io/docs/book/) tutorial, although my code may be a little different as I remade it from scratch to train a bit. If you are interested in Rust and WebAssembly, I really recommend you to follow the tutorial and try to build you own version, it can be a very fun experience!
+If you want to create this project yourself, you can follow [this](https://rustwasm.github.io/docs/book/) tutorial, although my code may be a little different as I remade it from scratch to train a bit. If you are interested in Rust and WebAssembly, I really recommend you to follow the tutorial and try to build you own version, it can be a very fun experience!
 
-# Compile from source
+# Building from source
 
 If you want to see this project in actions, you'll need `wasm-pack` and `npm`:
 
