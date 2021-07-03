@@ -1,3 +1,14 @@
+/**
+ * Create a shader of the given type.
+ *
+ * @param { WebGLRenderingContext } gl
+ * @param { WebGLRenderingContext.VERTEXT_SHADER | WebGLRenderingContext.FRAGMENT_SHADER} type
+ * @param { string } src - Source code of the shader in GLSL
+ *
+ * @returns { WebGLShader }
+ *
+ * @throws Throws an error if the compilation failed.
+ */
 export function createShader(gl, type, src) {
 	const shader = gl.createShader(type);
 
@@ -14,6 +25,18 @@ export function createShader(gl, type, src) {
 	return shader;
 }
 
+
+/**
+ * Create a program using the given shaders.
+ *
+ * @param { WebGLRenderingContext } gl
+ * @param { WebGLShader } vertexShader
+ * @param { WebGLShader } vertexShader
+ *
+ * @returns { WebGLProgram }
+ *
+ * @throws Throws an error if the linking failed.
+ */
 export function createProgram(gl, vertexShader, fragmentShader) {
 	const program = gl.createProgram();
 
@@ -30,6 +53,13 @@ export function createProgram(gl, vertexShader, fragmentShader) {
 	return program;
 }
 
+/**
+ * Resize the canvas to its client size if needed.
+ *
+ * @param { HTMLCanvasElement } canvas
+ * 
+ * @returns { boolean } Returns wheter or not the canvas has been resized.
+ */
 export function resizeCanvasToDisplaySize(canvas) {
 	const boundingRect = canvas.getBoundingClientRect();
 	
