@@ -5,8 +5,9 @@ This project is a very simple implementation of Conway's Game of Life that I mad
 If you want to create this project yourself, you can follow [this](https://rustwasm.github.io/docs/book/) tutorial, although my code may be a little different as I remade it from scratch to train a bit. If you are interested in Rust and WebAssembly, I really recommend you to follow the tutorial and try to build you own version, it can be a very fun experience!
 
 # Building from source
+**This tutorial targets linux/WSL (Windows Subsystem for Linux) users, i don't actually know how to do it in Windows or MacOS, but it shouldn't be much different.**
 
-If you want to see this project in actions, you'll need `wasm-pack` and `npm`:
+If you want to see this project in actions, you'll need [`wasm-pack`](https://github.com/rustwasm/wasm-pack) and [`Node.js`](https://nodejs.org/en/):
 
 First, clone the repo:
 ```
@@ -38,6 +39,7 @@ npm start
 ```
 
 Now if you go to your browser and access `localhost:8080`, you should see something like this:
+
 ![screen-gif](./example.gif)
 
 I hope you liked it!
