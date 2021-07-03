@@ -3,7 +3,7 @@
  *
  * @param { WebGLRenderingContext } gl
  * @param { WebGLRenderingContext.VERTEXT_SHADER | WebGLRenderingContext.FRAGMENT_SHADER} type
- * @param { string } src - Source code of the shader in GLSL
+ * @param { string } src Source code of the shader in GLSL
  *
  * @returns { WebGLShader }
  *
@@ -24,7 +24,6 @@ export function createShader(gl, type, src) {
 
 	return shader;
 }
-
 
 /**
  * Create a program using the given shaders.

@@ -183,7 +183,7 @@ mod tests {
     #[test]
     pub fn test_zero_live_neigbors_count() {
         let mut universe = Universe::new(3);
-
+        
         universe.toggle_cell(1, 1); // Middle cell to true
 
         // Only the center cell is alive, so the live neighbors count
